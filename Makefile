@@ -19,7 +19,7 @@ run-rust:  ## run rust project, temporary
 ######## Project Code Quality Operations###############
 #######################################################
 
-format-core-rust:
+format-rust:
 	(cd $(RUST_DIR); cargo fmt)
 
 
