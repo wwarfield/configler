@@ -8,4 +8,5 @@ name = "configler_pyo3"
 crate-type = ["cdylib"]
 
 [dependencies]
+configler-core ={ path="../configler-core" }
 pyo3 = "0.22.0"

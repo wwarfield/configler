@@ -1,9 +1,10 @@
 use pyo3::prelude::*;
+use configler_core;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
 fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
+    Ok(configler_core::sum_as_string(a, b))
 }
 
 /// A Python module implemented in Rust.
