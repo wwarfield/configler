@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   linux:
-    runs-on: ${{ matrix.platform.runner }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./rust
