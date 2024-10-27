@@ -9,7 +9,6 @@ on:
   push:
     branches:
       - main
-      - master
     tags:
       - '*'
   pull_request:
@@ -48,8 +47,10 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
+          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        working-directory: rust
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
@@ -79,8 +80,10 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
+          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        working-directory: rust
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: dist
@@ -106,8 +109,10 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        working-directory: rust
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
@@ -132,8 +137,10 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        working-directory: rust
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
@@ -147,8 +154,10 @@ jobs:
         with:
           command: sdist
           args: --out dist
+          working-directory: rust
       - name: Upload sdist
         uses: actions/upload-artifact@v4
+        working-directory: rust
         with:
           name: wheels-sdist
           path: dist
@@ -169,6 +178,7 @@ jobs:
       - uses: actions/download-artifact@v4
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
+        working-directory: rust
         with:
           subject-path: 'wheels-*/*'
       - name: Publish to PyPI
@@ -179,3 +189,4 @@ jobs:
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
+          working-directory: rust
