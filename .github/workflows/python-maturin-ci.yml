@@ -3,12 +3,16 @@
 #
 #    maturin generate-ci github
 #
+# This github action builds the python bindings on several platforms to
+# ensure compatibility across platforms
 name: python-maturin-ci
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'rust/configler-pyo3/**'
     tags:
       - '*'
   pull_request:

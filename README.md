@@ -25,5 +25,9 @@ more guidelines may come if interest grows.
 
 This is an open project so feel free to report issues, propose new features, or open pull-requests.
 
+## Sponsor
+If you find this project valuable please use the [sponsor link](buymeacoffee.com/wwarfield) to buy me a coffee while I work on new
+interesting things.
+
 ## License
 [see the Apache 2.0 license here](LICENSE)
