@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: ./rust
+        working-directory: ./rust/configler-pyo3
     strategy:
       matrix:
         platform:
@@ -50,7 +50,7 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
-          working-directory: ./rust
+          working-directory: ./rust/configler-pyo3
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: ./rust
+        working-directory: ./rust/configler-pyo3
     strategy:
       matrix:
         platform:
@@ -85,7 +85,7 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
-          working-directory: ./rust
+          working-directory: ./rust/configler-pyo3
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -96,7 +96,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: ./rust
+        working-directory: ./rust/configler-pyo3
     strategy:
       matrix:
         platform:
@@ -116,7 +116,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-          working-directory: ./rust
+          working-directory: ./rust/configler-pyo3
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -127,7 +127,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     defaults:
       run:
-        working-directory: ./rust
+        working-directory: ./rust/configler-pyo3
     strategy:
       matrix:
         platform:
@@ -146,7 +146,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-          working-directory: ./rust
+          working-directory: ./rust/configler-pyo3
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./rust
+        working-directory: ./rust/configler-pyo3
     steps:
       - uses: actions/checkout@v4
       - name: Build sdist
@@ -165,7 +165,7 @@ jobs:
         with:
           command: sdist
           args: --out dist
-          working-directory: ./rust
+          working-directory: ./rust/configler-pyo3
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./rust
+        working-directory: ./rust/configler-pyo3
     if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     needs: [linux, musllinux, windows, macos, sdist]
     permissions:

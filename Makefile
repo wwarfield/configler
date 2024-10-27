@@ -18,3 +18,17 @@ run-core-rust:
 
 format-core-rust:
 	(cd core-rust; cargo fmt)
+
+
+#######################################################
+######## Language Specific Operations   ###############
+#######################################################
+
+install-python-deps: ## Install python dependencies for configler-pyo3
+	(cd rust/configler-pyo3; python3 -m venv .venv; . .venv/bin/activate; pip3 install -r requirements.txt)
+
+build-python-bindings: ## Build & install rust bindings for python
+	(cd rust/configler-pyo3; . .venv/bin/activate; maturin develop)
+
+start-python-shell: build-python-bindings ## Start python shell with python bindings
+	(cd rust/configler-pyo3; . .venv/bin/activate; python3)
