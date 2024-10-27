@@ -6,4 +6,5 @@ edition = "2021"
 [lib]
 name = "configler_core"
 
-[dependencies]
+[dev-dependencies]
+cargo-audit.workspace = true

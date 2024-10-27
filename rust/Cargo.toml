@@ -5,3 +5,6 @@ members = [
     "configler-core",
     "configler-pyo3"
 ]
+
+[workspace.dependencies]
+cargo-audit = "0.20.1"
