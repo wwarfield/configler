@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "configler"
+name = "string_sum"
 crate-type = ["dylib"]
 
 
 [dependencies]
+pyo3 = "0.22.5"

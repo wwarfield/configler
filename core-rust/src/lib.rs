@@ -1,4 +1,5 @@
 use std::{env, ffi::{CStr, CString}};
+use pyo3::prelude::*;
 
 #[repr(C)]
 struct ConfigPOC {}
@@ -25,9 +26,21 @@ impl ConfigPOC {
 }
 
 
-#[no_mangle]
-pub extern "C" fn double(x: i32) -> i32 {
-    x * 2
+
+
+/// Formats the sum of two numbers as string.
+#[pyfunction]
+fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
+    Ok((a + b).to_string())
+}
+
+/// A Python module implemented in Rust. The name of this function must match
+/// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
+/// import the module.
+#[pymodule]
+fn string_sum(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+    Ok(())
 }
 
 // fn main() {
