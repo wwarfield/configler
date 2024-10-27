@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github
 #
-name: CI
+name: maturin-ci
 
 on:
   push:
@@ -20,6 +20,9 @@ permissions:
 jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
+    defaults:
+      run:
+        working-directory: ./rust
     strategy:
       matrix:
         platform:
@@ -47,16 +50,17 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
-          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
-        working-directory: rust
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
+    defaults:
+      run:
+        working-directory: ./rust
     strategy:
       matrix:
         platform:
@@ -80,16 +84,17 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
-          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
-        working-directory: rust
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
+    defaults:
+      run:
+        working-directory: ./rust
     strategy:
       matrix:
         platform:
@@ -109,16 +114,17 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
-        working-directory: rust
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
+    defaults:
+      run:
+        working-directory: ./rust
     strategy:
       matrix:
         platform:
@@ -137,16 +143,17 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-          working-directory: rust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
-        working-directory: rust
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
 
   sdist:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./rust
     steps:
       - uses: actions/checkout@v4
       - name: Build sdist
@@ -154,10 +161,8 @@ jobs:
         with:
           command: sdist
           args: --out dist
-          working-directory: rust
       - name: Upload sdist
         uses: actions/upload-artifact@v4
-        working-directory: rust
         with:
           name: wheels-sdist
           path: dist
@@ -165,6 +170,9 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./rust
     if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     needs: [linux, musllinux, windows, macos, sdist]
     permissions:
@@ -178,7 +186,6 @@ jobs:
       - uses: actions/download-artifact@v4
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
-        working-directory: rust
         with:
           subject-path: 'wheels-*/*'
       - name: Publish to PyPI
@@ -189,4 +196,3 @@ jobs:
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
-          working-directory: rust
