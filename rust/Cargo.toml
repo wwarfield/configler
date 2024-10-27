@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "configler-core",
+    "configler-pyo3"
+]

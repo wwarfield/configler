@@ -1,0 +1,12 @@
+[package]
+name = "configler_pyo3"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "configler_pyo3"
+crate-type = ["cdylib"]
+
+[dependencies]
+configler-core ={ path="../configler-core" }
+pyo3 = "0.22.0"
