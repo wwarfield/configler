@@ -17,6 +17,8 @@ build-rust: ## Build rust project
 run-rust:  ## run rust project, temporary
 	(cd $(RUST_DIR); cargo run)
 
+test-rust: ## Run test suite
+	(cd $(RUST_DIR); cargo test)
 
 install-llvm-cov: ## installs rust code coverage tool
 	curl --proto '=https' --tlsv1.2 -fsSL https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-$(HOST_ARCH).tar.gz | tar xzf - -C "$(HOME)/.cargo/bin"
