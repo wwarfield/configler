@@ -6,10 +6,15 @@
 
 (cd ./rust; cargo run --bin stub_gen)
 
+diff_stat=$(git diff --stat rust/configler-pyo3/configler_pyo3.pyi)
+echo "Stub Diff"
+echo "${diff_stat}"
+
 # Check if any files have been modified
-if git diff-index --quiet HEAD --; then
-    echo "No changes detected."
-else
-    echo "File(s) have been modified. Exiting."
+if [[ $diff_stat == *"changed"* ]]; then
+    echo "Changes Detected after generating python type stubs"
+    echo "Please run 'make build-python-bindings' to correct this"
     exit 1
+else
+    echo "All python stubs up to date"
 fi
