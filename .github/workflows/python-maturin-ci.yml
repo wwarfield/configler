@@ -157,15 +157,19 @@ jobs:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
 
+  check-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python Bindings
+        run: ./bin/verify_python_stub.sh
+
   sdist:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./rust/configler-pyo3
     steps:
-      - uses: actions/checkout@v4
-      - name: Check Python Bindings
-        run: ./bin/verify_python_stub.sh
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
