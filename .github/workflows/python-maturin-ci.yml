@@ -162,7 +162,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check Python Bindings
-        run: ./bin/verify_python_stub.sh
+        run: bash ./bin/verify_python_stub.sh
 
   sdist:
     runs-on: ubuntu-latest
