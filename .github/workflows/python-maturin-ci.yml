@@ -170,6 +170,7 @@ jobs:
       run:
         working-directory: ./rust/configler-pyo3
     steps:
+      - uses: actions/checkout@v4
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
