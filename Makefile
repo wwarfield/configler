@@ -49,6 +49,7 @@ install-python-deps: ## Install python dependencies for configler-pyo3
 	(cd $(PYO3_DIR); python3 -m venv .venv; . .venv/bin/activate; pip3 install -r requirements.txt)
 
 build-python-bindings: ## Build & install rust bindings for python
+	(cd $(RUST_DIR); cargo run --bin stub_gen)
 	(cd $(PYO3_DIR); . .venv/bin/activate; maturin develop)
 
 start-python-shell: build-python-bindings ## Start python shell with python bindings

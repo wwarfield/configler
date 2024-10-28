@@ -8,3 +8,8 @@ members = [
 
 [workspace.dependencies]
 cargo-audit = "0.20.1"
+
+[patch.crates-io]
+# We are patching numpy with the latest main because there is currently a bug
+# that causes Window builds to fail (https://github.com/PyO3/rust-numpy/pull/463)
+numpy = { git ="https://github.com/PyO3/rust-numpy.git", rev="327ab10"}
