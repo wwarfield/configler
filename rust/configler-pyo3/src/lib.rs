@@ -1,4 +1,3 @@
-use configler_core;
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
@@ -27,9 +26,13 @@ mod tests {
 
         Python::with_gil(|py| {
             let configler_pyo3 = py.import_bound("configler_pyo3").unwrap();
-            py_run!(py, configler_pyo3, r#"
+            py_run!(
+                py,
+                configler_pyo3,
+                r#"
                 assert configler_pyo3.sum_as_string(3,5) == '8'
-            "#)
+            "#
+            )
         });
     }
 }
