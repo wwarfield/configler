@@ -44,19 +44,31 @@ impl FromStr for DotEnvironmentConfigSource {
 
         let result_key_value_pairs = dot_env_str
             .split("\n")
+            // enumerate records into line_no & record
+            .enumerate()
             // Filter out records that should be skipped
-            .filter(|&record| {
-                record.trim().chars().count() > 0
+            .filter(|(_, record)| {
+                let trimmed_record = record.trim();
+                let is_empty = trimmed_record.chars().count() == 0;
+                let is_comment = trimmed_record.starts_with("#");
+                !is_empty && !is_comment
             })
             // Map record into key value pairs
-            .map(|record| {
+            .map(|(line_no, record)| {
                 let tokens = record.split('=').collect::<Vec<&str>>();
                 if tokens.len() < 2 {
-                    //TODO figure out how to add indices to error message
-                    return Err("Record has invalid '=' operand")
+                    return Err(format!("At Line {}, Record has invalid '=' operand", line_no))
                 } else {
-                    let key = tokens[0].trim();
-                    let value = tokens[1].trim();
+                    let key = tokens[0].trim().trim_start_matches("export ").trim();
+
+                    let temp_value = tokens[1].trim();
+                    let value: &str;
+                    if temp_value.starts_with("\"") && temp_value.ends_with("\"") {
+                        value = temp_value.trim_start_matches("\"").trim_end_matches("\"");
+                    } else {
+                        value = temp_value;
+                    }
+
                     return Ok((key, value))
                 }
             })
@@ -89,33 +101,51 @@ mod tests {
     fn parse_simple_dot_env_string() {
         let dot_env_str = "
         FIRST=one
-        FIRST_FOO=one
+        FIRST_FOO=one foo
         ";
 
+        // Verify no parsing errors
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
         assert_eq!(dot_env_source_result.clone().err(), None);
 
+        // verify the correct number of items were added
         let dot_env_source = dot_env_source_result.unwrap();
         assert_eq!(dot_env_source.values.len(), 2);
+
+        // verify key values
+        assert_eq!(dot_env_source.values.get("FIRST").map(|s| s.to_string()), Some("one".to_string()));
+        assert_eq!(dot_env_source.values.get("FIRST_FOO").map(|s| s.to_string()), Some("one foo".to_string()));
     }
 
     #[test]
     fn parse_dot_env_string() {
         let dot_env_str = "
         FIRST=one
-        FIRST_FOO=one
         # COMMENT
-        export SECOND=three
+        export SECOND=second value
         SPACE = space value
         QUOTED = \"quote value\"
 
-        SECOND=second
+        THIRD=third
+        lower=fourth value
+        UPPER=UPPER VALUE
         ";
 
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
         assert_eq!(dot_env_source_result.clone().err(), None);
 
         let dot_env_source = dot_env_source_result.unwrap();
-        assert_eq!(dot_env_source.values.len(), 2);
+        assert_eq!(dot_env_source.values.len(), 7);
+
+        // verify key values
+        assert_eq!(dot_env_source.values.get("FIRST").map(|s| s.to_string()), Some("one".to_string()));
+        assert_eq!(dot_env_source.values.get("SECOND").map(|s| s.to_string()), Some("second value".to_string()));
+        assert_eq!(dot_env_source.values.get("SPACE").map(|s| s.to_string()), Some("space value".to_string()));
+        assert_eq!(dot_env_source.values.get("QUOTED").map(|s| s.to_string()), Some("quote value".to_string()));
+        assert_eq!(dot_env_source.values.get("THIRD").map(|s| s.to_string()), Some("third".to_string()));
+        // assert_eq!(dot_env_source.values.get("LOWER").map(|s| s.to_string()), Some("lower value".to_string()));
+        assert_eq!(dot_env_source.values.get("UPPER").map(|s| s.to_string()), Some("UPPER VALUE".to_string()));
     }
+
+    // TODO test multiline input
 }
