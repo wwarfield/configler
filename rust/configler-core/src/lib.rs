@@ -20,7 +20,6 @@ dyn_clone::clone_trait_object!(ConfigSource);
 struct EnvironmentConfigSource {}
 
 impl EnvironmentConfigSource {
-
     #![allow(dead_code)]
     fn convert_property_to_environment_name(&self, property_name: &str) -> String {
         // TODO add more conversion rules
@@ -51,7 +50,6 @@ struct Config {
 }
 
 impl Config {
-
     #![allow(dead_code)]
     fn get_value(&self, property_name: &str) -> Option<String> {
         for config_source in self.sources.iter() {
@@ -116,7 +114,10 @@ mod tests {
     // #[case("foo.bar-baz", "FOO_BAR_BAZ")]
     // #[case("foo.bar[0]", "FOO_BAR_0_")]
     // #[case("foo.bar[0].baz", "FOO_BAR_0__BAZ")]
-    fn convert_property_to_environment_name(#[case] property_name: String, #[case] expected_env_name: String) {
+    fn convert_property_to_environment_name(
+        #[case] property_name: String,
+        #[case] expected_env_name: String,
+    ) {
         let config_source = EnvironmentConfigSource {};
         let env_name = config_source.convert_property_to_environment_name(&property_name);
         assert_eq!(expected_env_name, env_name);
