@@ -8,6 +8,7 @@ pub fn sum_as_string(a: usize, b: usize) -> String {
 }
 
 trait ConfigSource: DynClone {
+    #![allow(dead_code)]
     fn get_ordinal(&self) -> usize;
     fn get_value(&self, property_name: &str) -> Option<String>;
     fn get_name(&self) -> &str;
@@ -19,6 +20,8 @@ dyn_clone::clone_trait_object!(ConfigSource);
 struct EnvironmentConfigSource {}
 
 impl EnvironmentConfigSource {
+
+    #![allow(dead_code)]
     fn convert_property_to_environment_name(&self, property_name: &str) -> String {
         // TODO add more conversion rules
         // https://smallrye.io/smallrye-config/Main/config/environment-variables/
@@ -48,6 +51,8 @@ struct Config {
 }
 
 impl Config {
+
+    #![allow(dead_code)]
     fn get_value(&self, property_name: &str) -> Option<String> {
         for config_source in self.sources.iter() {
             let value = config_source.get_value(property_name);
@@ -71,6 +76,7 @@ struct ConfigBuilder {
 }
 
 impl ConfigBuilder {
+    #![allow(dead_code)]
     fn new() -> ConfigBuilder {
         ConfigBuilder {
             sources: Vec::new(),
