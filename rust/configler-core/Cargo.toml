@@ -8,3 +8,7 @@ name = "configler_core"
 
 [dev-dependencies]
 cargo-audit.workspace = true
+rstest.workspace = true
+
+[dependencies]
+dyn-clone = "1.0.17"
