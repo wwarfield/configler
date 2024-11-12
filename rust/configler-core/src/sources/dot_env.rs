@@ -23,8 +23,7 @@ impl ConfigSource for DotEnvironmentConfigSource {
     }
 
     fn get_name(&self) -> &str {
-        // TODO check what this looks like
-        std::any::type_name::<DotEnvironmentConfigSource>()
+        std::any::type_name::<DotEnvironmentConfigSource>().split("::").last().unwrap()
     }
 }
 
@@ -51,7 +50,6 @@ impl FromStr for DotEnvironmentConfigSource {
             .enumerate()
             // Filter out records that should be skipped
             .filter(|(i, record)| {
-                println!("record index {}; '{}'", i, record);
                 let trimmed_record = record.trim();
                 let is_empty = trimmed_record.chars().count() == 0;
                 let is_comment = trimmed_record.starts_with("#");
@@ -100,7 +98,6 @@ impl FromStr for DotEnvironmentConfigSource {
                     error_message.push_str("\n");
                 }
                 error_message.push_str(&result_pair.err().unwrap().to_string());
-                // return Err(result_pair.err().unwrap().to_string())
             } else {
                 let pair = result_pair.unwrap();
                 key_value_map.insert(pair.0.to_owned(), pair.1.to_owned());
@@ -126,6 +123,10 @@ mod tests {
 
     use super::*;
 
+    fn get_config_value(config: &DotEnvironmentConfigSource, key: &str) -> Option<String> {
+        config.values.get(key).map(|s| s.to_string())
+    }
+
     #[test]
     fn parse_simple_dot_env_string() {
         let dot_env_str = "
@@ -143,14 +144,11 @@ mod tests {
 
         // verify key values
         assert_eq!(
-            dot_env_source.values.get("FIRST").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "FIRST"),
             Some("one".to_string())
         );
         assert_eq!(
-            dot_env_source
-                .values
-                .get("FIRST_FOO")
-                .map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "FIRST_FOO"),
             Some("one foo".to_string())
         );
     }
@@ -177,31 +175,31 @@ mod tests {
 
         // verify key values
         assert_eq!(
-            dot_env_source.values.get("FIRST").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "FIRST"),
             Some("one".to_string())
         );
         assert_eq!(
-            dot_env_source.values.get("SECOND").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "SECOND"),
             Some("second value".to_string())
         );
         assert_eq!(
-            dot_env_source.values.get("SPACE").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "SPACE"),
             Some("space value".to_string())
         );
         assert_eq!(
-            dot_env_source.values.get("QUOTED").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "QUOTED"),
             Some("quote value".to_string())
         );
         assert_eq!(
-            dot_env_source.values.get("THIRD").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "THIRD"),
             Some("third".to_string())
         );
         assert_eq!(
-            dot_env_source.values.get("LOWER").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "LOWER"),
             Some("fourth value".to_string())
         );
         assert_eq!(
-            dot_env_source.values.get("UPPER").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "UPPER"),
             Some("UPPER VALUE".to_string())
         );
     }
@@ -255,14 +253,26 @@ mod tests {
         let dot_env_source = dot_env_source_result.unwrap();
         assert_eq!(dot_env_source.values.len(), 2);
         assert_eq!(
-            dot_env_source.values.get("FIRST").map(|s| s.to_string()),
+            get_config_value(&dot_env_source, "FIRST"),
             Some("some value\n        extends onto multiple lines\n        then ends".to_string())
         );
         // TODO may want a helper function to make these tests more readable
         assert_eq!(
-            dot_env_source.values.get("SECOND").map(|s| s.to_string()), Some("blah".to_string())
+            get_config_value(&dot_env_source, "SECOND"), Some("blah".to_string())
         )
 
     }
-    //TODO test source name
+
+    #[test]
+    fn config_source_name() {
+        let dot_env_str = "FIRST=one";
+
+        // verify no parsing error
+        let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
+        assert_eq!(dot_env_source_result.clone().err(), None);
+
+        // verify the correct number of items were added
+        let dot_env_source = dot_env_source_result.unwrap();
+        assert_eq!(dot_env_source.get_name(), "DotEnvironmentConfigSource");
+    }
 }
