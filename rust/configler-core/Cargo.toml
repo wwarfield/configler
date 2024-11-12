@@ -12,3 +12,4 @@ rstest.workspace = true
 
 [dependencies]
 dyn-clone = "1.0.17"
+regex = "1.11.1"

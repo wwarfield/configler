@@ -1,5 +1,6 @@
 use super::ConfigSource;
 use std::{collections::HashMap, env, error::Error, str::FromStr};
+use regex::Regex;
 
 // https://www.dotenv.org/docs/security/env
 #[derive(Clone, Debug)]
@@ -38,13 +39,19 @@ impl DotEnvironmentConfigSource {
 
 impl FromStr for DotEnvironmentConfigSource {
     fn from_str(dot_env_str: &str) -> Result<Self, Self::Err> {
+
         // TODO break up pipeline into parsing functions?
-        let result_key_value_pairs = dot_env_str
-            .split("\n")
+        // TODO pre-compile expression
+
+        // Regular Expression splits text into records based on newlines while respecting multi-line quoted text
+        let result_key_value_pairs = Regex::new(r#"(?:[^\n]+"[^"]*"\n)|(?:[^\n]*\n)"#).unwrap()
+            .find_iter(dot_env_str)
+            .map(|m| m.as_str())
             // enumerate records into line_no & record
             .enumerate()
             // Filter out records that should be skipped
-            .filter(|(_, record)| {
+            .filter(|(i, record)| {
+                println!("record index {}; '{}'", i, record);
                 let trimmed_record = record.trim();
                 let is_empty = trimmed_record.chars().count() == 0;
                 let is_comment = trimmed_record.starts_with("#");
@@ -115,6 +122,8 @@ impl FromStr for DotEnvironmentConfigSource {
 
 #[cfg(test)]
 mod tests {
+    use crate::sources::dot_env;
+
     use super::*;
 
     #[test]
@@ -230,6 +239,30 @@ mod tests {
         );
     }
 
-    // TODO test multiline input
+    #[test]
+    fn parse_multiline_quoted_value() {
+        let dot_env_str = "
+        FIRST=\"some value
+        extends onto multiple lines
+        then ends\"
+        SECOND=blah
+        ";
+
+        // Verify parsing error
+        let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
+        assert_eq!(dot_env_source_result.clone().err(), None);
+
+        let dot_env_source = dot_env_source_result.unwrap();
+        assert_eq!(dot_env_source.values.len(), 2);
+        assert_eq!(
+            dot_env_source.values.get("FIRST").map(|s| s.to_string()),
+            Some("some value\n        extends onto multiple lines\n        then ends".to_string())
+        );
+        // TODO may want a helper function to make these tests more readable
+        assert_eq!(
+            dot_env_source.values.get("SECOND").map(|s| s.to_string()), Some("blah".to_string())
+        )
+
+    }
     //TODO test source name
 }
