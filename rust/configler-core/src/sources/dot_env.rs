@@ -1,9 +1,10 @@
 use super::ConfigSource;
-use std::{collections::HashMap, env, error::Error, str::FromStr};
 use regex::Regex;
+use std::{collections::HashMap, env, str::FromStr};
 
 // https://www.dotenv.org/docs/security/env
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct DotEnvironmentConfigSource {
     // TODO I wonder if there is some value in separating the config source from actually storing
     // config values in a map, hmm
@@ -23,7 +24,10 @@ impl ConfigSource for DotEnvironmentConfigSource {
     }
 
     fn get_name(&self) -> &str {
-        std::any::type_name::<DotEnvironmentConfigSource>().split("::").last().unwrap()
+        std::any::type_name::<DotEnvironmentConfigSource>()
+            .split("::")
+            .last()
+            .unwrap()
     }
 }
 
@@ -38,18 +42,18 @@ impl DotEnvironmentConfigSource {
 
 impl FromStr for DotEnvironmentConfigSource {
     fn from_str(dot_env_str: &str) -> Result<Self, Self::Err> {
-
         // TODO break up pipeline into parsing functions?
         // TODO pre-compile expression
 
         // Regular Expression splits text into records based on newlines while respecting multi-line quoted text
-        let result_key_value_pairs = Regex::new(r#"(?:[^\n]+"[^"]*"\n)|(?:[^\n]*\n)"#).unwrap()
+        let result_key_value_pairs = Regex::new(r#"(?:[^\n]+"[^"]*"\n)|(?:[^\n]*\n)"#)
+            .unwrap()
             .find_iter(dot_env_str)
             .map(|m| m.as_str())
             // enumerate records into line_no & record
             .enumerate()
             // Filter out records that should be skipped
-            .filter(|(i, record)| {
+            .filter(|(_i, record)| {
                 let trimmed_record = record.trim();
                 let is_empty = trimmed_record.chars().count() == 0;
                 let is_comment = trimmed_record.starts_with("#");
@@ -59,10 +63,10 @@ impl FromStr for DotEnvironmentConfigSource {
             .map(|(line_no, record)| {
                 let tokens = record.split('=').collect::<Vec<&str>>();
                 if tokens.len() < 2 {
-                    return Err(format!(
+                    Err(format!(
                         "At Line {}, Record has invalid '=' operand",
                         line_no
-                    ));
+                    ))
                 } else {
                     let key = tokens[0]
                         .trim()
@@ -71,21 +75,21 @@ impl FromStr for DotEnvironmentConfigSource {
                         .to_uppercase();
 
                     let temp_value = tokens[1].trim();
-                    let value: &str;
-                    if temp_value.starts_with("\"") && temp_value.ends_with("\"") {
-                        value = temp_value.trim_start_matches("\"").trim_end_matches("\"");
+                    let value: &str = if temp_value.starts_with("\"") && temp_value.ends_with("\"")
+                    {
+                        temp_value.trim_start_matches("\"").trim_end_matches("\"")
                     } else {
-                        value = temp_value;
-                    }
+                        temp_value
+                    };
 
-                    if key.len() == 0 {
+                    if key.is_empty() {
                         return Err(format!("At Line {}, Key is empty", line_no));
                     }
-                    if value.len() == 0 {
+                    if value.is_empty() {
                         return Err(format!("At Line {}, value is empty", line_no));
                     }
 
-                    return Ok((key, value));
+                    Ok((key, value))
                 }
             })
             .collect::<Vec<Result<(String, &str), _>>>();
@@ -94,8 +98,8 @@ impl FromStr for DotEnvironmentConfigSource {
         let mut key_value_map: HashMap<String, String> = HashMap::new();
         for result_pair in result_key_value_pairs {
             if result_pair.is_err() {
-                if error_message.len() > 0 {
-                    error_message.push_str("\n");
+                if !error_message.is_empty() {
+                    error_message.push('\n');
                 }
                 error_message.push_str(&result_pair.err().unwrap().to_string());
             } else {
@@ -104,7 +108,7 @@ impl FromStr for DotEnvironmentConfigSource {
             }
         }
 
-        if error_message.len() > 0 {
+        if !error_message.is_empty() {
             Err(error_message)
         } else {
             Ok(DotEnvironmentConfigSource {
@@ -119,8 +123,6 @@ impl FromStr for DotEnvironmentConfigSource {
 
 #[cfg(test)]
 mod tests {
-    use crate::sources::dot_env;
-
     use super::*;
 
     fn get_config_value(config: &DotEnvironmentConfigSource, key: &str) -> Option<String> {
@@ -258,9 +260,9 @@ mod tests {
         );
         // TODO may want a helper function to make these tests more readable
         assert_eq!(
-            get_config_value(&dot_env_source, "SECOND"), Some("blah".to_string())
+            get_config_value(&dot_env_source, "SECOND"),
+            Some("blah".to_string())
         )
-
     }
 
     #[test]

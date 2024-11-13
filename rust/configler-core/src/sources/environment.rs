@@ -26,7 +26,10 @@ impl ConfigSource for EnvironmentConfigSource {
     }
 
     fn get_name(&self) -> &str {
-        std::any::type_name::<EnvironmentConfigSource>().split("::").last().unwrap()
+        std::any::type_name::<EnvironmentConfigSource>()
+            .split("::")
+            .last()
+            .unwrap()
     }
 }
 
