@@ -1,6 +1,6 @@
 use super::ConfigSource;
 use regex::Regex;
-use std::{collections::HashMap, env, str::FromStr};
+use std::{collections::HashMap, fs, str::FromStr};
 
 // https://www.dotenv.org/docs/security/env
 #[derive(Clone, Debug)]
@@ -17,10 +17,8 @@ impl ConfigSource for DotEnvironmentConfigSource {
     }
 
     fn get_value(&self, property_name: &str) -> Option<String> {
-        match env::var(self.convert_property_to_environment_name(property_name)) {
-            Ok(value) => Some(value),
-            Err(_) => None,
-        }
+        let key = self.convert_property_to_environment_name(property_name);
+        self.values.get(&key).map(|value| value.to_string())
     }
 
     fn get_name(&self) -> &str {
@@ -35,18 +33,22 @@ impl DotEnvironmentConfigSource {
     #![allow(dead_code)]
     fn convert_property_to_environment_name(&self, property_name: &str) -> String {
         // TODO add more conversion rules
+        // TODO may also want to refactor this since it's a copy & paste from environment.rs
         // https://smallrye.io/smallrye-config/Main/config/environment-variables/
         str::replace(&property_name.to_uppercase(), ".", "_")
+    }
+
+    fn from_file(file_path: &str) -> Self {
+        //TODO handle errors
+        let file_content = fs::read_to_string(file_path).unwrap();
+        DotEnvironmentConfigSource::from_str(&file_content).unwrap()
     }
 }
 
 impl FromStr for DotEnvironmentConfigSource {
     fn from_str(dot_env_str: &str) -> Result<Self, Self::Err> {
-        // TODO break up pipeline into parsing functions?
-        // TODO pre-compile expression
-
         // Regular Expression splits text into records based on newlines while respecting multi-line quoted text
-        let result_key_value_pairs = Regex::new(r#"(?:[^\n]+"[^"]*"\n)|(?:[^\n]*\n)"#)
+        let result_key_value_pairs = Regex::new(r#"(?:[^\n]+"[^"]*"\n)|(?:[^\n]*\n)|(?:[^\n]+$)"#)
             .unwrap()
             .find_iter(dot_env_str)
             .map(|m| m.as_str())
@@ -117,7 +119,7 @@ impl FromStr for DotEnvironmentConfigSource {
         }
     }
 
-    // TODO should there be a custom Error Type?
+    //TODO create error type
     type Err = String;
 }
 
@@ -258,7 +260,6 @@ mod tests {
             get_config_value(&dot_env_source, "FIRST"),
             Some("some value\n        extends onto multiple lines\n        then ends".to_string())
         );
-        // TODO may want a helper function to make these tests more readable
         assert_eq!(
             get_config_value(&dot_env_source, "SECOND"),
             Some("blah".to_string())
@@ -266,15 +267,53 @@ mod tests {
     }
 
     #[test]
-    fn config_source_name() {
+    fn parse_config_without_newlines() {
         let dot_env_str = "FIRST=one";
 
-        // verify no parsing error
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
         assert_eq!(dot_env_source_result.clone().err(), None);
 
-        // verify the correct number of items were added
+        let dot_env_source = dot_env_source_result.unwrap();
+        assert_eq!(dot_env_source.values.len(), 1);
+
+        assert_eq!(
+            get_config_value(&dot_env_source, "FIRST"),
+            Some("one".to_string())
+        );
+    }
+
+    #[test]
+    fn parse_from_file() {
+        let dot_config_source = DotEnvironmentConfigSource::from_file("./test.env");
+
+        assert_eq!(dot_config_source.values.len(), 1);
+        assert_eq!(
+            get_config_value(&dot_config_source, "KEY1"),
+            Some("blah".to_string())
+        );
+    }
+
+    #[test]
+    fn config_source_name() {
+        let dot_env_str = "FIRST=one";
+
+        let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
+        assert_eq!(dot_env_source_result.clone().err(), None);
+
         let dot_env_source = dot_env_source_result.unwrap();
         assert_eq!(dot_env_source.get_name(), "DotEnvironmentConfigSource");
+    }
+
+    #[test]
+    fn read_dot_env_variable() {
+        let dot_env_str = "
+        FIRST=first_value
+        SECOND=other value
+        ";
+        let dot_env_source = DotEnvironmentConfigSource::from_str(dot_env_str).unwrap();
+
+        println!("values: {:?}", dot_env_source.values);
+        let value = dot_env_source.get_value("first");
+        assert_eq!(value, Some("first_value".to_string()));
     }
 }
