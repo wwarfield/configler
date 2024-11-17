@@ -1,5 +1,5 @@
 pub mod sources;
-use sources::{ConfigSource, EnvironmentConfigSource};
+use sources::{dot_env::DotEnvironmentConfigSource, ConfigSource, EnvironmentConfigSource};
 
 // sum 2 values and return string
 pub fn sum_as_string(a: usize, b: usize) -> String {
@@ -37,15 +37,27 @@ struct ConfigBuilder {
 impl ConfigBuilder {
     #![allow(dead_code)]
     fn new() -> ConfigBuilder {
+        // let environment = EnvironmentConfigSource{}
         ConfigBuilder {
             sources: Vec::new(),
         }
     }
 
-    fn add_default_sources(&mut self) -> &mut ConfigBuilder {
-        self.sources.push(Box::new(EnvironmentConfigSource {}));
+    fn add_source(&mut self, source: EnvironmentConfigSource) -> &mut ConfigBuilder {
+        self.sources.push(Box::new(source));
         self
     }
+
+    fn add_default_sources(&mut self) -> &mut ConfigBuilder {
+        self.add_source(EnvironmentConfigSource {  })
+    }
+
+    // TODO should be able to override config file path
+    // TODO should be able to set config file path environment variable name
+
+    // TODO this is where maybe it would be useful to separate out reading the config file out of source
+    // instantiation. So that you can customize the source file location as part of the builder and then
+    // when the configuration is built we maybe read the config files
 
     fn build(&self) -> Config {
         Config {

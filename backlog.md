@@ -10,5 +10,7 @@ Current feature backlog of tasks to do
 - more complex config builder
 - Expose Basic interface in python
 - launch on cargo & pypi
+- config validator
+- support expressions
 - config profiles
 - secret handling
