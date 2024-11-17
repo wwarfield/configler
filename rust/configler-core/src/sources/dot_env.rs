@@ -1,6 +1,6 @@
 use super::ConfigSource;
-use regex::Regex;
 use core::fmt;
+use regex::Regex;
 use std::{collections::HashMap, fs, str::FromStr};
 
 // https://www.dotenv.org/docs/security/env
@@ -39,16 +39,19 @@ impl DotEnvironmentConfigSource {
         str::replace(&property_name.to_uppercase(), ".", "_")
     }
 
-    fn from_file(file_path: &str) -> Self {
-        //TODO handle errors
-        let file_content = fs::read_to_string(file_path).unwrap();
-        DotEnvironmentConfigSource::from_str(&file_content).unwrap()
+    fn from_file(file_path: &str) -> Result<Self, DotEnvFileError> {
+        match fs::read_to_string(file_path) {
+            Err(error) => Err(DotEnvFileError::IoError(error)),
+            Ok(file_content) => match DotEnvironmentConfigSource::from_str(&file_content) {
+                Err(parse_errors) => Err(DotEnvFileError::DotEnvLineParseErrors(parse_errors)),
+                Ok(config_source) => Ok(config_source),
+            },
+        }
     }
 }
 
 impl FromStr for DotEnvironmentConfigSource {
-
-    type Err = DotEnvFileParseError;
+    type Err = DotEnvLineParseErrors;
 
     fn from_str(dot_env_str: &str) -> Result<Self, Self::Err> {
         // Regular Expression splits text into records based on newlines while respecting multi-line quoted text
@@ -69,7 +72,7 @@ impl FromStr for DotEnvironmentConfigSource {
             .map(|(line_no, record)| {
                 let tokens = record.split('=').collect::<Vec<&str>>();
                 if tokens.len() < 2 {
-                    Err((line_no, ParseError::InvalidAssigment))
+                    Err((line_no, LineParseError::InvalidAssigment))
                 } else {
                     let key = tokens[0]
                         .trim()
@@ -86,22 +89,21 @@ impl FromStr for DotEnvironmentConfigSource {
                     };
 
                     if key.is_empty() {
-                        Err((line_no, ParseError::KeyIsEmpty))
-                    }
-                    else if value.is_empty() {
-                        Err((line_no, ParseError::ValueIsEmpty))
-                    }
-                    else {
+                        Err((line_no, LineParseError::KeyIsEmpty))
+                    } else if value.is_empty() {
+                        Err((line_no, LineParseError::ValueIsEmpty))
+                    } else {
                         Ok((key, value))
                     }
                 }
             })
-            .collect::<Vec<Result<(String, &str), (usize, ParseError)>>>();
+            .collect::<Vec<Result<(String, &str), (usize, LineParseError)>>>();
 
-        let mut parse_errors = DotEnvFileParseError{ line_errors: Vec::new() };
+        let mut parse_errors = DotEnvLineParseErrors {
+            line_errors: Vec::new(),
+        };
         let mut key_value_map: HashMap<String, String> = HashMap::new();
         for result_pair in result_key_value_pairs {
-
             if result_pair.is_err() {
                 parse_errors.line_errors.push(result_pair.err().unwrap());
             } else {
@@ -121,29 +123,48 @@ impl FromStr for DotEnvironmentConfigSource {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DotEnvFileParseError {
-    line_errors: Vec<(usize, ParseError)>
+pub struct DotEnvLineParseErrors {
+    line_errors: Vec<(usize, LineParseError)>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum ParseError {
+enum LineParseError {
     InvalidAssigment,
     KeyIsEmpty,
-    ValueIsEmpty
+    ValueIsEmpty,
 }
 
-impl fmt::Display for DotEnvFileParseError {
+impl fmt::Display for DotEnvLineParseErrors {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Found {} errors while parsing Dot Environment File", self.line_errors.len())?;
+        writeln!(
+            f,
+            "Found {} errors while parsing Dot Environment File",
+            self.line_errors.len()
+        )?;
         for (line_number, parse_error) in self.line_errors.iter() {
             let error_description = match parse_error {
-                ParseError::InvalidAssigment => "Record has invalid '=' operand",
-                ParseError::KeyIsEmpty => "key is empty",
-                ParseError::ValueIsEmpty => "value is empty",
+                LineParseError::InvalidAssigment => "Record has invalid '=' operand",
+                LineParseError::KeyIsEmpty => "key is empty",
+                LineParseError::ValueIsEmpty => "value is empty",
             };
             writeln!(f, "Line {}: {}", line_number, error_description)?;
         }
         Ok(())
+    }
+}
+
+#[derive(Debug)]
+enum DotEnvFileError {
+    DotEnvLineParseErrors(DotEnvLineParseErrors),
+    IoError(std::io::Error),
+}
+
+impl fmt::Display for DotEnvFileError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DotEnvFileError::IoError(error) => write!(f, "{}", error),
+            DotEnvFileError::DotEnvLineParseErrors(error) => write!(f, "{}", error),
+        }
     }
 }
 
@@ -244,7 +265,9 @@ mod tests {
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
         let parse_errors = dot_env_source_result.err();
 
-        let expected_parse_errors = DotEnvFileParseError{line_errors: vec![(2, ParseError::ValueIsEmpty)]};
+        let expected_parse_errors = DotEnvLineParseErrors {
+            line_errors: vec![(2, LineParseError::ValueIsEmpty)],
+        };
         assert_eq!(parse_errors, Some(expected_parse_errors));
     }
 
@@ -259,13 +282,15 @@ mod tests {
 
         // Verify parsing error
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
-        
+
         let parse_errors = dot_env_source_result.err();
 
-        let expected_parse_errors = DotEnvFileParseError{line_errors: vec![
-            (2, ParseError::ValueIsEmpty),
-            (4, ParseError::KeyIsEmpty)
-        ]};
+        let expected_parse_errors = DotEnvLineParseErrors {
+            line_errors: vec![
+                (2, LineParseError::ValueIsEmpty),
+                (4, LineParseError::KeyIsEmpty),
+            ],
+        };
         assert_eq!(parse_errors, Some(expected_parse_errors));
     }
 
@@ -312,13 +337,24 @@ mod tests {
 
     #[test]
     fn parse_from_file() {
-        let dot_config_source = DotEnvironmentConfigSource::from_file("./test.env");
+        let dot_config_result = DotEnvironmentConfigSource::from_file("./test.env");
+        assert!(dot_config_result.is_ok());
+
+        let dot_config_source = dot_config_result.unwrap();
 
         assert_eq!(dot_config_source.values.len(), 1);
         assert_eq!(
             get_config_value(&dot_config_source, "KEY1"),
             Some("blah".to_string())
         );
+    }
+
+    #[test]
+    fn errors_out_when_file_does_not_exist() {
+        let dot_config_result = DotEnvironmentConfigSource::from_file("./fake-file.env");
+        assert!(dot_config_result.is_err());
+        let config_error = dot_config_result.err().unwrap();
+        assert!(matches!(config_error, DotEnvFileError::IoError(_)));
     }
 
     #[test]
