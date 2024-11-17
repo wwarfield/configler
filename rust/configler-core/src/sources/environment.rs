@@ -11,7 +11,7 @@ impl EnvironmentConfigSource {}
 
 impl ConfigSource for EnvironmentConfigSource {
     fn get_ordinal(&self) -> usize {
-        300
+        100
     }
 
     fn get_value(&self, property_name: &str) -> Option<String> {

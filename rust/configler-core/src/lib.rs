@@ -33,6 +33,8 @@ impl Config {
     }
 }
 
+#[derive(Debug)]
+#[allow(dead_code)]
 enum SourceName {
     Environment,
     DotEnvironmentFile,
@@ -99,13 +101,16 @@ impl ConfigBuilder {
                     }
                 };
 
-                if config_source.is_err() {
-                    return Err(config_source.err().unwrap());
+                if let Ok(source) = config_source {
+                    final_sources.push(source);
                 } else {
-                    final_sources.push(config_source.unwrap());
+                    return Err(config_source.err().unwrap());
                 }
             }
         }
+
+        // Sort sources by ascending ordinal value
+        final_sources.sort_by_key(|s1| s1.as_ref().get_ordinal());
 
         Ok(Config {
             sources: final_sources,
@@ -116,6 +121,7 @@ impl ConfigBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::*;
     use std::{env, str::FromStr};
 
     #[test]
@@ -172,11 +178,13 @@ mod tests {
         assert_eq!(config.get_value("two_val"), Some("300".to_string()));
     }
 
-    #[test]
-    fn read_lazy_source_from_directory() {
+    #[rstest]
+    #[case("test_configs")]
+    #[case("test_configs/")]
+    fn read_lazy_source_from_directory(#[case] directory: String) {
         let build_result = ConfigBuilder::new()
             .add_source(SourceName::DotEnvironmentFile)
-            .set_config_directory("test_configs")
+            .set_config_directory(&directory)
             .build();
         assert!(build_result.is_ok());
 
