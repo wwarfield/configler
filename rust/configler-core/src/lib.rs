@@ -1,5 +1,5 @@
 pub mod sources;
-use sources::{dot_env::DotEnvironmentConfigSource, ConfigSource, EnvironmentConfigSource};
+use sources::{ConfigSource, EnvironmentConfigSource};
 
 // sum 2 values and return string
 pub fn sum_as_string(a: usize, b: usize) -> String {
@@ -49,7 +49,7 @@ impl ConfigBuilder {
     }
 
     fn add_default_sources(&mut self) -> &mut ConfigBuilder {
-        self.add_source(EnvironmentConfigSource {  })
+        self.add_source(EnvironmentConfigSource {})
     }
 
     // TODO should be able to override config file path
