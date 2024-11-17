@@ -1,4 +1,4 @@
-use super::ConfigSource;
+use super::{config_source::convert_property_to_environment_name, ConfigSource};
 use core::fmt;
 use regex::Regex;
 use std::{collections::HashMap, fs, str::FromStr};
@@ -18,7 +18,7 @@ impl ConfigSource for DotEnvironmentConfigSource {
     }
 
     fn get_value(&self, property_name: &str) -> Option<String> {
-        let key = self.convert_property_to_environment_name(property_name);
+        let key = convert_property_to_environment_name(property_name);
         self.values.get(&key).map(|value| value.to_string())
     }
 
@@ -30,15 +30,8 @@ impl ConfigSource for DotEnvironmentConfigSource {
     }
 }
 
+#[allow(dead_code)]
 impl DotEnvironmentConfigSource {
-    #![allow(dead_code)]
-    fn convert_property_to_environment_name(&self, property_name: &str) -> String {
-        // TODO add more conversion rules
-        // TODO may also want to refactor this since it's a copy & paste from environment.rs
-        // https://smallrye.io/smallrye-config/Main/config/environment-variables/
-        str::replace(&property_name.to_uppercase(), ".", "_")
-    }
-
     fn from_file(file_path: &str) -> Result<Self, DotEnvFileError> {
         match fs::read_to_string(file_path) {
             Err(error) => Err(DotEnvFileError::IoError(error)),
