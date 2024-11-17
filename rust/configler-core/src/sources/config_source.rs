@@ -1,10 +1,18 @@
+use core::fmt;
+
 use dyn_clone::DynClone;
+
+use super::dot_env::DotEnvLineParseErrors;
 
 pub trait ConfigSource: DynClone {
     #![allow(dead_code)]
     fn get_ordinal(&self) -> usize;
     fn get_value(&self, property_name: &str) -> Option<String>;
     fn get_name(&self) -> &str;
+
+    fn from_file(file_path: &str) -> Result<Self, FileError>
+    where
+        Self: Sized;
 }
 
 dyn_clone::clone_trait_object!(ConfigSource);
@@ -13,6 +21,21 @@ pub fn convert_property_to_environment_name(property_name: &str) -> String {
     // TODO add more conversion rules
     // https://smallrye.io/smallrye-config/Main/config/environment-variables/
     str::replace(&property_name.to_uppercase(), ".", "_")
+}
+
+#[derive(Debug)]
+pub enum FileError {
+    DotEnvLineParseErrors(DotEnvLineParseErrors),
+    IoError(std::io::Error),
+}
+
+impl fmt::Display for FileError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FileError::IoError(error) => write!(f, "{}", error),
+            FileError::DotEnvLineParseErrors(error) => write!(f, "{}", error),
+        }
+    }
 }
 
 #[cfg(test)]

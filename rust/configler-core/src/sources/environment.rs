@@ -1,4 +1,7 @@
-use super::{config_source::convert_property_to_environment_name, ConfigSource};
+use super::{
+    config_source::{convert_property_to_environment_name, FileError},
+    ConfigSource,
+};
 use std::env;
 
 #[derive(Clone)]
@@ -8,7 +11,7 @@ impl EnvironmentConfigSource {}
 
 impl ConfigSource for EnvironmentConfigSource {
     fn get_ordinal(&self) -> usize {
-        300
+        100
     }
 
     fn get_value(&self, property_name: &str) -> Option<String> {
@@ -23,6 +26,10 @@ impl ConfigSource for EnvironmentConfigSource {
             .split("::")
             .last()
             .unwrap()
+    }
+
+    fn from_file(_file_path: &str) -> Result<Self, FileError> {
+        Ok(EnvironmentConfigSource {})
     }
 }
 
