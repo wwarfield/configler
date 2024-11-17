@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn parse_from_file() {
-        let dot_config_result = DotEnvironmentConfigSource::from_file("./test.env");
+        let dot_config_result = DotEnvironmentConfigSource::from_file("./test_configs/.env");
         assert!(dot_config_result.is_ok());
 
         let dot_config_source = dot_config_result.unwrap();
