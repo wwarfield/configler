@@ -37,19 +37,18 @@ struct ConfigBuilder {
 impl ConfigBuilder {
     #![allow(dead_code)]
     fn new() -> ConfigBuilder {
-        // let environment = EnvironmentConfigSource{}
         ConfigBuilder {
             sources: Vec::new(),
         }
     }
 
-    fn add_source(&mut self, source: EnvironmentConfigSource) -> &mut ConfigBuilder {
+    fn add_custom_source(&mut self, source: EnvironmentConfigSource) -> &mut ConfigBuilder {
         self.sources.push(Box::new(source));
         self
     }
 
     fn add_default_sources(&mut self) -> &mut ConfigBuilder {
-        self.add_source(EnvironmentConfigSource {})
+        self.add_custom_source(EnvironmentConfigSource {})
     }
 
     // TODO should be able to override config file path

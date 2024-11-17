@@ -1,4 +1,7 @@
-use super::{config_source::convert_property_to_environment_name, ConfigSource};
+use super::{
+    config_source::{convert_property_to_environment_name, FileError},
+    ConfigSource,
+};
 use core::fmt;
 use regex::Regex;
 use std::{collections::HashMap, fs, str::FromStr};
@@ -28,15 +31,12 @@ impl ConfigSource for DotEnvironmentConfigSource {
             .last()
             .unwrap()
     }
-}
 
-#[allow(dead_code)]
-impl DotEnvironmentConfigSource {
-    fn from_file(file_path: &str) -> Result<Self, DotEnvFileError> {
+    fn from_file(file_path: &str) -> Result<Self, FileError> {
         match fs::read_to_string(file_path) {
-            Err(error) => Err(DotEnvFileError::IoError(error)),
+            Err(error) => Err(FileError::IoError(error)),
             Ok(file_content) => match DotEnvironmentConfigSource::from_str(&file_content) {
-                Err(parse_errors) => Err(DotEnvFileError::DotEnvLineParseErrors(parse_errors)),
+                Err(parse_errors) => Err(FileError::DotEnvLineParseErrors(parse_errors)),
                 Ok(config_source) => Ok(config_source),
             },
         }
@@ -143,21 +143,6 @@ impl fmt::Display for DotEnvLineParseErrors {
             writeln!(f, "Line {}: {}", line_number, error_description)?;
         }
         Ok(())
-    }
-}
-
-#[derive(Debug)]
-enum DotEnvFileError {
-    DotEnvLineParseErrors(DotEnvLineParseErrors),
-    IoError(std::io::Error),
-}
-
-impl fmt::Display for DotEnvFileError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            DotEnvFileError::IoError(error) => write!(f, "{}", error),
-            DotEnvFileError::DotEnvLineParseErrors(error) => write!(f, "{}", error),
-        }
     }
 }
 
@@ -347,7 +332,7 @@ mod tests {
         let dot_config_result = DotEnvironmentConfigSource::from_file("./fake-file.env");
         assert!(dot_config_result.is_err());
         let config_error = dot_config_result.err().unwrap();
-        assert!(matches!(config_error, DotEnvFileError::IoError(_)));
+        assert!(matches!(config_error, FileError::IoError(_)));
     }
 
     #[test]

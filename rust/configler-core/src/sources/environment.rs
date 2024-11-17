@@ -1,4 +1,7 @@
-use super::{config_source::convert_property_to_environment_name, ConfigSource};
+use super::{
+    config_source::{convert_property_to_environment_name, FileError},
+    ConfigSource,
+};
 use std::env;
 
 #[derive(Clone)]
@@ -23,6 +26,10 @@ impl ConfigSource for EnvironmentConfigSource {
             .split("::")
             .last()
             .unwrap()
+    }
+
+    fn from_file(_file_path: &str) -> Result<Self, FileError> {
+        Ok(EnvironmentConfigSource {})
     }
 }
 
