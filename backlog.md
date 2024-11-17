@@ -2,7 +2,7 @@
 
 Current feature backlog of tasks to do
 
-- dotenv config source support
+- refactor source instantiation
 - Read config files from path
 - Yaml Config Source support
 - Support for more complex property names
