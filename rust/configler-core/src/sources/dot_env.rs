@@ -1,5 +1,6 @@
 use super::ConfigSource;
 use regex::Regex;
+use core::fmt;
 use std::{collections::HashMap, fs, str::FromStr};
 
 // https://www.dotenv.org/docs/security/env
@@ -46,6 +47,9 @@ impl DotEnvironmentConfigSource {
 }
 
 impl FromStr for DotEnvironmentConfigSource {
+
+    type Err = DotEnvFileParseError;
+
     fn from_str(dot_env_str: &str) -> Result<Self, Self::Err> {
         // Regular Expression splits text into records based on newlines while respecting multi-line quoted text
         let result_key_value_pairs = Regex::new(r#"(?:[^\n]+"[^"]*"\n)|(?:[^\n]*\n)|(?:[^\n]+$)"#)
@@ -65,10 +69,7 @@ impl FromStr for DotEnvironmentConfigSource {
             .map(|(line_no, record)| {
                 let tokens = record.split('=').collect::<Vec<&str>>();
                 if tokens.len() < 2 {
-                    Err(format!(
-                        "At Line {}, Record has invalid '=' operand",
-                        line_no
-                    ))
+                    Err((line_no, ParseError::InvalidAssigment))
                 } else {
                     let key = tokens[0]
                         .trim()
@@ -85,42 +86,65 @@ impl FromStr for DotEnvironmentConfigSource {
                     };
 
                     if key.is_empty() {
-                        return Err(format!("At Line {}, Key is empty", line_no));
+                        Err((line_no, ParseError::KeyIsEmpty))
                     }
-                    if value.is_empty() {
-                        return Err(format!("At Line {}, value is empty", line_no));
+                    else if value.is_empty() {
+                        Err((line_no, ParseError::ValueIsEmpty))
                     }
-
-                    Ok((key, value))
+                    else {
+                        Ok((key, value))
+                    }
                 }
             })
-            .collect::<Vec<Result<(String, &str), _>>>();
+            .collect::<Vec<Result<(String, &str), (usize, ParseError)>>>();
 
-        let mut error_message = "".to_owned();
+        let mut parse_errors = DotEnvFileParseError{ line_errors: Vec::new() };
         let mut key_value_map: HashMap<String, String> = HashMap::new();
         for result_pair in result_key_value_pairs {
+
             if result_pair.is_err() {
-                if !error_message.is_empty() {
-                    error_message.push('\n');
-                }
-                error_message.push_str(&result_pair.err().unwrap().to_string());
+                parse_errors.line_errors.push(result_pair.err().unwrap());
             } else {
                 let pair = result_pair.unwrap();
                 key_value_map.insert(pair.0.to_owned(), pair.1.to_owned());
             }
         }
 
-        if !error_message.is_empty() {
-            Err(error_message)
-        } else {
+        if parse_errors.line_errors.is_empty() {
             Ok(DotEnvironmentConfigSource {
                 values: key_value_map,
             })
+        } else {
+            Err(parse_errors)
         }
     }
+}
 
-    //TODO create error type
-    type Err = String;
+#[derive(Debug, Clone, PartialEq)]
+pub struct DotEnvFileParseError {
+    line_errors: Vec<(usize, ParseError)>
+}
+
+#[derive(Debug, Clone, PartialEq)]
+enum ParseError {
+    InvalidAssigment,
+    KeyIsEmpty,
+    ValueIsEmpty
+}
+
+impl fmt::Display for DotEnvFileParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "Found {} errors while parsing Dot Environment File", self.line_errors.len())?;
+        for (line_number, parse_error) in self.line_errors.iter() {
+            let error_description = match parse_error {
+                ParseError::InvalidAssigment => "Record has invalid '=' operand",
+                ParseError::KeyIsEmpty => "key is empty",
+                ParseError::ValueIsEmpty => "value is empty",
+            };
+            writeln!(f, "Line {}: {}", line_number, error_description)?;
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -218,10 +242,10 @@ mod tests {
 
         // Verify parsing error
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
-        assert_eq!(
-            dot_env_source_result.clone().err(),
-            Some("At Line 2, value is empty".to_string())
-        );
+        let parse_errors = dot_env_source_result.err();
+
+        let expected_parse_errors = DotEnvFileParseError{line_errors: vec![(2, ParseError::ValueIsEmpty)]};
+        assert_eq!(parse_errors, Some(expected_parse_errors));
     }
 
     #[test]
@@ -235,10 +259,14 @@ mod tests {
 
         // Verify parsing error
         let dot_env_source_result = DotEnvironmentConfigSource::from_str(dot_env_str);
-        assert_eq!(
-            dot_env_source_result.clone().err(),
-            Some("At Line 2, value is empty\nAt Line 4, Key is empty".to_string())
-        );
+        
+        let parse_errors = dot_env_source_result.err();
+
+        let expected_parse_errors = DotEnvFileParseError{line_errors: vec![
+            (2, ParseError::ValueIsEmpty),
+            (4, ParseError::KeyIsEmpty)
+        ]};
+        assert_eq!(parse_errors, Some(expected_parse_errors));
     }
 
     #[test]
