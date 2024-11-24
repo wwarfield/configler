@@ -1,6 +1,5 @@
 use std::{
-    collections::HashMap,
-    fs::{self, File},
+    fs::{self},
     str::FromStr,
 };
 
@@ -23,7 +22,7 @@ impl ConfigSource for YamlConfigSource {
 
     fn get_value(&self, property_name: &str) -> Option<String> {
         let mut current_node = &self.yaml_doc;
-        for key in property_name.split('.').into_iter() {
+        for key in property_name.split('.') {
             if current_node[key].is_null() {
                 return None;
             } else {
@@ -157,7 +156,7 @@ mod tests {
 
     #[test]
     fn parse_yaml_file() {
-        let config_result = YamlConfigSource::from_file("./test_configs/test.yaml");
+        let config_result = YamlConfigSource::from_file("./test_configs/config.yaml");
         assert!(config_result.is_ok());
 
         let config = config_result.unwrap();
@@ -185,8 +184,14 @@ mod tests {
         assert!(config_result.is_ok());
 
         let config_source = config_result.unwrap();
-        assert_eq!(config_source.get_value("database.username"), Some("foo".to_string()));
-        assert_eq!(config_source.get_value("endpoints.health"), Some("/health".to_string()));
+        assert_eq!(
+            config_source.get_value("database.username"),
+            Some("foo".to_string())
+        );
+        assert_eq!(
+            config_source.get_value("endpoints.health"),
+            Some("/health".to_string())
+        );
         assert_eq!(config_source.get_value("database.ssl"), None);
     }
 }
