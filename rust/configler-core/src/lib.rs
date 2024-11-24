@@ -212,4 +212,6 @@ mod tests {
 
         env::remove_var("KEY1");
     }
+
+    //TODO test environment variable overrides yaml source
 }
