@@ -18,20 +18,27 @@ impl ConfigSource for YamlConfigSource {
         265
     }
 
+    // TODO what does list support look like for different ConfigSources?
+    //      get_list?
+
     fn get_value(&self, property_name: &str) -> Option<String> {
-        // match env::var(convert_property_to_environment_name(property_name)) {
-        //     Ok(value) => Some(value),
-        //     Err(_) => None,
-        // }
-        None
+        let mut current_node = &self.yaml_doc;
+        for key in property_name.split('.').into_iter() {
+            if current_node[key].is_null() {
+                return None;
+            } else {
+                current_node = &current_node[key];
+            }
+        }
+
+        current_node.as_str().map(|str_ref| str_ref.to_string())
     }
 
     fn get_name(&self) -> &str {
-        // std::any::type_name::<EnvironmentConfigSource>()
-        //     .split("::")
-        //     .last()
-        //     .unwrap()
-        "hard coded"
+        std::any::type_name::<YamlConfigSource>()
+            .split("::")
+            .last()
+            .unwrap()
     }
 
     fn from_file(file_path: &str) -> Result<Self, FileError> {
@@ -119,7 +126,7 @@ mod tests {
         let config_source = config_result.unwrap();
 
         assert!(!config_source.yaml_doc["database"].is_null());
-        assert!(!config_source.yaml_doc["database"].is_null());
+        assert!(!config_source.yaml_doc["endpoints"].is_null());
     }
 
     #[test]
@@ -164,6 +171,22 @@ mod tests {
         assert!(config_result.is_err());
     }
 
-    // TODO get value from yaml
-    // TODO get nested value from yaml
+    #[test]
+    fn get_yaml_value() {
+        let yaml_str = "
+        database:
+            username: foo
+            password: bar
+        endpoints:
+            health: '/health'
+            user: '/users'
+        ";
+        let config_result = YamlConfigSource::from_str(yaml_str);
+        assert!(config_result.is_ok());
+
+        let config_source = config_result.unwrap();
+        assert_eq!(config_source.get_value("database.username"), Some("foo".to_string()));
+        assert_eq!(config_source.get_value("endpoints.health"), Some("/health".to_string()));
+        assert_eq!(config_source.get_value("database.ssl"), None);
+    }
 }
