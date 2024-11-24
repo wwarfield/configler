@@ -8,6 +8,7 @@ Current feature backlog of tasks to do
 - more complex config builder
 - Expose Basic interface in python
 - add function docs
+- add get list support for all config sources
 - update readme with examples
 - launch on cargo & pypi
 - mocking support

@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{
     fs::{self},
     str::FromStr,
@@ -16,9 +17,6 @@ impl ConfigSource for YamlConfigSource {
     fn get_ordinal(&self) -> usize {
         265
     }
-
-    // TODO what does list support look like for different ConfigSources?
-    //      get_list?
 
     fn get_value(&self, property_name: &str) -> Option<String> {
         let mut current_node = &self.yaml_doc;
@@ -44,8 +42,7 @@ impl ConfigSource for YamlConfigSource {
         match fs::read_to_string(file_path) {
             Err(error) => Err(FileError::IoError(error)),
             Ok(file_content) => match YamlConfigSource::from_str(&file_content) {
-                //TODO this should be a parse error not a FileError
-                Err(parse_error) => Err(parse_error),
+                Err(parse_error) => Err(FileError::YamlParseError(parse_error)),
                 Ok(config_source) => Ok(config_source),
             },
         }
@@ -53,7 +50,7 @@ impl ConfigSource for YamlConfigSource {
 }
 
 impl FromStr for YamlConfigSource {
-    type Err = FileError;
+    type Err = YamlParseError;
 
     fn from_str(yaml_str: &str) -> Result<Self, Self::Err> {
         let loader_result = YamlLoader::load_from_str(yaml_str);
@@ -63,13 +60,30 @@ impl FromStr for YamlConfigSource {
                     // Yaml Multi-docs allow there to be conflicting keys
                     // in the Yaml file which would make resolving key names
                     // ambiguous. To avoid that we will not support multi-doc
-                    return Err(FileError::YamlUnsupportedMultiDoc);
+                    return Err(YamlParseError::UnsupportedMultiDoc);
                 }
                 Ok(YamlConfigSource {
                     yaml_doc: yaml_docs[0].clone(),
                 })
             }
-            Err(scan_error) => Err(FileError::YamlScanError(scan_error)),
+            Err(scan_error) => Err(YamlParseError::ScanError(scan_error)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum YamlParseError {
+    ScanError(yaml_rust2::ScanError),
+    UnsupportedMultiDoc,
+}
+
+impl fmt::Display for YamlParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            YamlParseError::ScanError(error) => write!(f, "{}", error),
+            YamlParseError::UnsupportedMultiDoc => {
+                write!(f, "Yaml Multi-doc features are not supported")
+            }
         }
     }
 }

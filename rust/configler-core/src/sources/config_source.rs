@@ -3,6 +3,7 @@ use core::fmt;
 use dyn_clone::DynClone;
 
 use super::dot_env::DotEnvLineParseErrors;
+use super::yaml::YamlParseError;
 
 pub trait ConfigSource: DynClone {
     #![allow(dead_code)]
@@ -26,8 +27,7 @@ pub fn convert_property_to_environment_name(property_name: &str) -> String {
 #[derive(Debug)]
 pub enum FileError {
     DotEnvLineParseErrors(DotEnvLineParseErrors),
-    YamlScanError(yaml_rust2::ScanError), // FIXME: it may make sense to have our own definition of this
-    YamlUnsupportedMultiDoc,
+    YamlParseError(YamlParseError),
     IoError(std::io::Error),
 }
 
@@ -36,10 +36,7 @@ impl fmt::Display for FileError {
         match self {
             FileError::IoError(error) => write!(f, "{}", error),
             FileError::DotEnvLineParseErrors(error) => write!(f, "{}", error),
-            FileError::YamlScanError(error) => write!(f, "{}", error),
-            FileError::YamlUnsupportedMultiDoc => {
-                write!(f, "Yaml Multi-doc features are not supported")
-            }
+            FileError::YamlParseError(error) => write!(f, "{}", error),
         }
     }
 }
