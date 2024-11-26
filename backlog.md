@@ -9,6 +9,7 @@ Current feature backlog of tasks to do
 - add function docs
 - add get list support for all config sources
 - update readme with examples
+- Fix maturin build warnings
 - launch on cargo & pypi
 - mocking support
 - config validator
