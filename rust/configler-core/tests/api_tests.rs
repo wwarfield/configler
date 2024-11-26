@@ -137,8 +137,6 @@ fn verify_config_property_group_pattern() {
     }
 
     let base_config = builder_result.unwrap();
-    //TODO this pattern encourages shared references, which I don't think rust supports
-    // may need to look into that a bit
     let db_config = DbConfig::from_config(&base_config);
 
     assert!(db_config.get_username().is_ok());
