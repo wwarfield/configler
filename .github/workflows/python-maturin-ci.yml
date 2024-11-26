@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - wwarfield-patch-1
     # paths:
     #  - 'rust/configler-pyo3/**'
     tags:
