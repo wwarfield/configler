@@ -134,6 +134,11 @@ impl ConfigBuilder {
     }
 }
 
+impl Default for ConfigBuilder {
+    fn default() -> Self {
+        ConfigBuilder::new()
+    }
+}
 
 pub trait ConfigPropertyGroup<'a> {
     fn get_value_map(&self) -> Result<HashMap<String, Option<String>>, ConfigValueError>;
@@ -145,7 +150,7 @@ pub trait ConfigPropertyGroup<'a> {
 pub enum ConfigValueError {
     // TODO these are placeholders, will need to update these once we implement these
     TypeError,
-    NullError
+    NullError,
 }
 
 #[cfg(test)]

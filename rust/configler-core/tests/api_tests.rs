@@ -1,6 +1,10 @@
 use std::{collections::HashMap, str::FromStr};
 
-use configler_core::{self, sources::{ConfigSource, YamlConfigSource}, Config, ConfigBuilder, ConfigPropertyGroup, ConfigValueError, SourceName};
+use configler_core::{
+    self,
+    sources::{ConfigSource, YamlConfigSource},
+    Config, ConfigBuilder, ConfigPropertyGroup, ConfigValueError, SourceName,
+};
 
 #[test]
 fn verify_lazy_builder_and_config_visibility() {
@@ -15,11 +19,14 @@ fn verify_lazy_builder_and_config_visibility() {
 
 #[test]
 fn verify_builder_custom_source_visibility() {
-    let yaml_source = YamlConfigSource::from_str("
+    let yaml_source = YamlConfigSource::from_str(
+        "
     database:
         user: baz
         password: foo
-    ").unwrap();
+    ",
+    )
+    .unwrap();
 
     let builder_result = ConfigBuilder::new()
         .add_custom_source(Box::new(yaml_source))
@@ -29,12 +36,14 @@ fn verify_builder_custom_source_visibility() {
 
     let config = builder_result.unwrap();
     assert_eq!(config.get_value("database.user"), Some("baz".to_string()));
-    assert_eq!(config.get_value_or_default("database.is_ssl", "true".to_string()), "true");
+    assert_eq!(
+        config.get_value_or_default("database.is_ssl", "true".to_string()),
+        "true"
+    );
 }
 
 #[test]
 fn verify_custom_source_works_with_builder() {
-
     #[derive(Clone)]
     struct CustomSource {}
 
@@ -42,40 +51,47 @@ fn verify_custom_source_works_with_builder() {
         fn get_ordinal(&self) -> usize {
             10
         }
-    
+
         fn get_value(&self, _property_name: &str) -> Option<String> {
             Some("example_value".to_string())
         }
-    
+
         fn get_name(&self) -> &str {
             "custom test source"
         }
-    
-        fn from_file(_file_path: &str) -> Result<Self, configler_core::sources::config_source::FileError>
+
+        fn from_file(
+            _file_path: &str,
+        ) -> Result<Self, configler_core::sources::config_source::FileError>
         where
-            Self: Sized {
-            Ok(CustomSource{})
+            Self: Sized,
+        {
+            Ok(CustomSource {})
         }
     }
 
     let builder_result = ConfigBuilder::new()
-        .add_custom_source(Box::new(CustomSource{}))
+        .add_custom_source(Box::new(CustomSource {}))
         .build();
     assert!(builder_result.is_ok());
 
     let config = builder_result.unwrap();
-    assert_eq!(config.get_value("any.value"), Some("example_value".to_string()));
-
+    assert_eq!(
+        config.get_value("any.value"),
+        Some("example_value".to_string())
+    );
 }
 
 #[test]
 fn verify_config_property_group_pattern() {
-
-    let yaml_source = YamlConfigSource::from_str("
+    let yaml_source = YamlConfigSource::from_str(
+        "
     database:
         user: baz
         password: foo
-    ").unwrap();
+    ",
+    )
+    .unwrap();
 
     let builder_result = ConfigBuilder::new()
         .add_custom_source(Box::new(yaml_source))
@@ -83,7 +99,7 @@ fn verify_config_property_group_pattern() {
     assert!(builder_result.is_ok());
 
     struct DbConfig<'a> {
-        config: &'a Config
+        config: &'a Config,
     }
     impl<'a> DbConfig<'a> {
         fn get_username(&self) -> Result<String, ConfigValueError> {
@@ -110,15 +126,13 @@ fn verify_config_property_group_pattern() {
             };
             match self.get_password() {
                 Ok(value) => value_map.insert("DATABASE_PASSWORD".to_string(), Some(value)),
-                Err(error) => return Err(error)
+                Err(error) => return Err(error),
             };
             Ok(value_map)
         }
-    
+
         fn from_config(config: &'a Config) -> Self {
-            DbConfig {
-                config
-            }
+            DbConfig { config }
         }
     }
 
@@ -136,6 +150,12 @@ fn verify_config_property_group_pattern() {
     assert!(value_map_result.is_ok());
 
     let value_map = value_map_result.unwrap();
-    assert_eq!(value_map.get("DATABASE_USER"), Some(&Some("baz".to_string())));
-    assert_eq!(value_map.get("DATABASE_PASSWORD"), Some(&Some("foo".to_string())));
+    assert_eq!(
+        value_map.get("DATABASE_USER"),
+        Some(&Some("baz".to_string()))
+    );
+    assert_eq!(
+        value_map.get("DATABASE_PASSWORD"),
+        Some(&Some("foo".to_string()))
+    );
 }
