@@ -12,7 +12,9 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/python-maturin-ci.yml'
       - 'rust/configler-pyo3/**'
+      - 'rust/Cargo.toml'
     tags:
       - '*'
   pull_request:
