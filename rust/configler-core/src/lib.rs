@@ -16,7 +16,6 @@ pub struct Config {
 }
 
 impl Config {
-    #![allow(dead_code)]
     pub fn get_value(&self, property_name: &str) -> Option<String> {
         for config_source in self.sources.iter() {
             let value = config_source.get_value(property_name);
@@ -36,7 +35,6 @@ impl Config {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum SourceName {
     Environment,
     DotEnvironmentFile,
@@ -50,7 +48,6 @@ pub struct ConfigBuilder {
 }
 
 impl ConfigBuilder {
-    #![allow(dead_code)]
     pub fn new() -> ConfigBuilder {
         ConfigBuilder {
             instantiated_sources: Vec::new(),

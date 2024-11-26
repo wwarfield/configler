@@ -6,7 +6,6 @@ use super::dot_env::DotEnvLineParseErrors;
 use super::yaml::YamlParseError;
 
 pub trait ConfigSource: DynClone {
-    #![allow(dead_code)]
     fn get_ordinal(&self) -> usize;
     fn get_value(&self, property_name: &str) -> Option<String>;
     fn get_name(&self) -> &str;
