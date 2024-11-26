@@ -11,8 +11,8 @@ on:
   push:
     branches:
       - main
-      - wwarfield-patch-1
     paths:
+      - '.github/workflows/python-maturin-ci.yml'
       - 'rust/configler-pyo3/**'
       - 'rust/Cargo.toml'
     tags:
