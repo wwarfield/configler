@@ -1,7 +1,7 @@
 pub mod sources;
 use sources::{
     config_source::FileError, dot_env::DotEnvironmentConfigSource, ConfigSource,
-    EnvironmentConfigSource,
+    EnvironmentConfigSource, YamlConfigSource,
 };
 
 // sum 2 values and return string
@@ -38,6 +38,7 @@ impl Config {
 enum SourceName {
     Environment,
     DotEnvironmentFile,
+    YamlFile,
 }
 
 struct ConfigBuilder {
@@ -96,6 +97,19 @@ impl ConfigBuilder {
 
                         match DotEnvironmentConfigSource::from_file(&file_path) {
                             Ok(source) => Ok(Box::new(source)),
+                            Err(error) => Err(error),
+                        }
+                    }
+                    SourceName::YamlFile => {
+                        let file_path = env_source
+                            .get_value("CONFIGLER_YAML_FILE")
+                            .or(self.config_directory.clone())
+                            .map_or("config.yaml".to_string(), |path| path + "config.yaml");
+
+                        match YamlConfigSource::from_file(&file_path) {
+                            Ok(source) => Ok(Box::new(source)),
+                            //TODO I do wonder if there should be an option to ignore the source if not found
+                            // hmm might have to think about that, Maybe for defaults only?
                             Err(error) => Err(error),
                         }
                     }
@@ -211,5 +225,25 @@ mod tests {
         );
 
         env::remove_var("KEY1");
+    }
+
+    #[test]
+    fn environment_var_overrides_yaml() {
+        env::set_var("DATABASE_USER", "Overrided value");
+
+        let build_result = ConfigBuilder::new()
+            .add_source(SourceName::Environment)
+            .add_source(SourceName::YamlFile)
+            .set_config_directory("test_configs")
+            .build();
+        assert!(build_result.is_ok());
+
+        let config = build_result.unwrap();
+        assert_eq!(
+            config.get_value("database.user"),
+            Some("Overrided value".to_string())
+        );
+
+        env::remove_var("DATABASE_USER");
     }
 }

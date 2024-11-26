@@ -1,0 +1,9 @@
+# Test configuration YAML file
+
+database:
+  user: foo
+  password: fake
+
+some-app-config:
+  host: 0.0.0.0
+  is_feature_on: true
