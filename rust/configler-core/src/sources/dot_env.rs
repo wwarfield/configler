@@ -8,7 +8,6 @@ use std::{collections::HashMap, fs, str::FromStr};
 
 // https://www.dotenv.org/docs/security/env
 #[derive(Clone, Debug)]
-#[allow(dead_code)]
 pub struct DotEnvironmentConfigSource {
     values: HashMap<String, String>,
 }
