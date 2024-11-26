@@ -15,7 +15,7 @@ pub struct Config {
 
 impl Config {
     #![allow(dead_code)]
-    fn get_value(&self, property_name: &str) -> Option<String> {
+    pub fn get_value(&self, property_name: &str) -> Option<String> {
         for config_source in self.sources.iter() {
             let value = config_source.get_value(property_name);
             if value.is_some() {
@@ -25,7 +25,7 @@ impl Config {
         None
     }
 
-    fn get_value_or_default(&self, property_name: &str, default: String) -> String {
+    pub fn get_value_or_default(&self, property_name: &str, default: String) -> String {
         match self.get_value(property_name) {
             Some(value) => value,
             None => default,
