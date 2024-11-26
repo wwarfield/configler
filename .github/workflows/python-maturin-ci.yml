@@ -11,8 +11,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'rust/configler-pyo3/**'
+    # paths:
+    #  - 'rust/configler-pyo3/**'
     tags:
       - '*'
   pull_request:
