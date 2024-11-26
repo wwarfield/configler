@@ -1,4 +1,6 @@
 pub mod sources;
+use std::collections::HashMap;
+
 use sources::{
     config_source::FileError, dot_env::DotEnvironmentConfigSource, ConfigSource,
     EnvironmentConfigSource, YamlConfigSource,
@@ -130,6 +132,20 @@ impl ConfigBuilder {
             sources: final_sources,
         })
     }
+}
+
+
+pub trait ConfigPropertyGroup<'a> {
+    fn get_value_map(&self) -> Result<HashMap<String, Option<String>>, ConfigValueError>;
+
+    fn from_config(config: &'a Config) -> Self;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConfigValueError {
+    // TODO these are placeholders, will need to update these once we implement these
+    TypeError,
+    NullError
 }
 
 #[cfg(test)]

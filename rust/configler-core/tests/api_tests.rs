@@ -1,6 +1,6 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
-use configler_core::{self, sources::{ConfigSource, YamlConfigSource}, ConfigBuilder, SourceName};
+use configler_core::{self, sources::{ConfigSource, YamlConfigSource}, Config, ConfigBuilder, ConfigPropertyGroup, ConfigValueError, SourceName};
 
 #[test]
 fn verify_lazy_builder_and_config_visibility() {
@@ -68,5 +68,74 @@ fn verify_custom_source_works_with_builder() {
 
 }
 
+#[test]
+fn verify_config_property_group_pattern() {
 
-// TODO verify pattern with sub config sources is possible
+    let yaml_source = YamlConfigSource::from_str("
+    database:
+        user: baz
+        password: foo
+    ").unwrap();
+
+    let builder_result = ConfigBuilder::new()
+        .add_custom_source(Box::new(yaml_source))
+        .build();
+    assert!(builder_result.is_ok());
+
+    struct DbConfig<'a> {
+        config: &'a Config
+    }
+    impl<'a> DbConfig<'a> {
+        fn get_username(&self) -> Result<String, ConfigValueError> {
+            match self.config.get_value("database.user") {
+                Some(value) => Ok(value),
+                None => Err(ConfigValueError::NullError),
+            }
+        }
+
+        fn get_password(&self) -> Result<String, ConfigValueError> {
+            match self.config.get_value("database.password") {
+                Some(value) => Ok(value),
+                None => Err(ConfigValueError::NullError),
+            }
+        }
+    }
+    impl<'a> ConfigPropertyGroup<'a> for DbConfig<'a> {
+        fn get_value_map(&self) -> Result<HashMap<String, Option<String>>, ConfigValueError> {
+            // TODO it would be good to find a way to generalize this more
+            let mut value_map: HashMap<String, Option<String>> = HashMap::new();
+            match self.get_username() {
+                Ok(value) => value_map.insert("DATABASE_USER".to_string(), Some(value)),
+                Err(error) => return Err(error),
+            };
+            match self.get_password() {
+                Ok(value) => value_map.insert("DATABASE_PASSWORD".to_string(), Some(value)),
+                Err(error) => return Err(error)
+            };
+            Ok(value_map)
+        }
+    
+        fn from_config(config: &'a Config) -> Self {
+            DbConfig {
+                config
+            }
+        }
+    }
+
+    let base_config = builder_result.unwrap();
+    //TODO this pattern encourages shared references, which I don't think rust supports
+    // may need to look into that a bit
+    let db_config = DbConfig::from_config(&base_config);
+
+    assert!(db_config.get_username().is_ok());
+    assert_eq!(db_config.get_username().unwrap(), "baz");
+    assert!(db_config.get_password().is_ok());
+    assert_eq!(db_config.get_password().unwrap(), "foo");
+
+    let value_map_result = db_config.get_value_map();
+    assert!(value_map_result.is_ok());
+
+    let value_map = value_map_result.unwrap();
+    assert_eq!(value_map.get("DATABASE_USER"), Some(&Some("baz".to_string())));
+    assert_eq!(value_map.get("DATABASE_PASSWORD"), Some(&Some("foo".to_string())));
+}

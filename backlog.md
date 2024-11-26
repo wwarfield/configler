@@ -15,3 +15,5 @@ Current feature backlog of tasks to do
 - support expressions
 - config profiles
 - secret handling
+- add macro for configuration groups
+- configuration injection
