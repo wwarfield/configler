@@ -9,7 +9,7 @@ pub fn sum_as_string(a: usize, b: usize) -> String {
     (a + b).to_string()
 }
 
-struct Config {
+pub struct Config {
     sources: Vec<Box<dyn ConfigSource>>,
 }
 
@@ -35,13 +35,13 @@ impl Config {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-enum SourceName {
+pub enum SourceName {
     Environment,
     DotEnvironmentFile,
     YamlFile,
 }
 
-struct ConfigBuilder {
+pub struct ConfigBuilder {
     instantiated_sources: Vec<Box<dyn ConfigSource>>,
     lazy_sources: Vec<SourceName>,
     config_directory: Option<String>,
@@ -49,7 +49,7 @@ struct ConfigBuilder {
 
 impl ConfigBuilder {
     #![allow(dead_code)]
-    fn new() -> ConfigBuilder {
+    pub fn new() -> ConfigBuilder {
         ConfigBuilder {
             instantiated_sources: Vec::new(),
             lazy_sources: Vec::new(),
@@ -57,7 +57,7 @@ impl ConfigBuilder {
         }
     }
 
-    fn set_config_directory(&mut self, config_directory: &str) -> &mut Self {
+    pub fn set_config_directory(&mut self, config_directory: &str) -> &mut Self {
         let mut directory = config_directory.to_owned();
         if !directory.ends_with("/") {
             directory += "/";
@@ -66,21 +66,21 @@ impl ConfigBuilder {
         self
     }
 
-    fn add_source(&mut self, name: SourceName) -> &mut Self {
+    pub fn add_source(&mut self, name: SourceName) -> &mut Self {
         self.lazy_sources.push(name);
         self
     }
 
-    fn add_custom_source(&mut self, source: Box<dyn ConfigSource>) -> &mut Self {
+    pub fn add_custom_source(&mut self, source: Box<dyn ConfigSource>) -> &mut Self {
         self.instantiated_sources.push(source);
         self
     }
 
-    fn add_default_sources(&mut self) -> &mut ConfigBuilder {
+    pub fn add_default_sources(&mut self) -> &mut ConfigBuilder {
         self.add_source(SourceName::Environment)
     }
 
-    fn build(&self) -> Result<Config, FileError> {
+    pub fn build(&self) -> Result<Config, FileError> {
         let mut final_sources = self.instantiated_sources.clone();
 
         if !self.lazy_sources.is_empty() {
