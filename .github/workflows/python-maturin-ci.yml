@@ -53,6 +53,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
+          maturin-version: "1.7.4"
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
@@ -88,6 +89,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
+          maturin-version: "1.7.4"
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
@@ -120,6 +122,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
+          maturin-version: "1.7.4"
           args: --release --out dist --find-interpreter
           sccache: 'true'
           working-directory: ./rust/configler-pyo3
@@ -150,6 +153,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
+          maturin-version: "1.7.4"
           args: --release --out dist --find-interpreter
           sccache: 'true'
           working-directory: ./rust/configler-pyo3
@@ -177,6 +181,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
+          maturin-version: "1.7.4"
           args: --out dist
           working-directory: ./rust/configler-pyo3
       - name: Upload sdist
@@ -213,4 +218,5 @@ jobs:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
           command: upload
+          maturin-version: "1.7.4"
           args: --non-interactive --skip-existing wheels-*/*
