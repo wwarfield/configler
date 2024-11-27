@@ -1,4 +1,6 @@
 pub mod sources;
+pub mod data_converters;
+
 use std::collections::HashMap;
 
 use sources::{
@@ -10,6 +12,23 @@ use sources::{
 pub fn sum_as_string(a: usize, b: usize) -> String {
     (a + b).to_string()
 }
+
+//TODO Data Type Converter
+// types to support
+// primitives
+//  - integer
+//  - float
+//  - string
+//  - boolean
+// durations
+// timestamps
+// dates
+
+// TODO should be able to build custom converter
+//  We may want to use generics to have a common interface for building converters
+//  and then call those from type specific functions on the config impl
+
+// TODO how should the user specify nullability?
 
 pub struct Config {
     sources: Vec<Box<dyn ConfigSource>>,
