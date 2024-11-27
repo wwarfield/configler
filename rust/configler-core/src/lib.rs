@@ -1,5 +1,7 @@
+pub mod data_converters;
 pub mod sources;
-use std::collections::HashMap;
+
+use std::{collections::HashMap, str::FromStr};
 
 use sources::{
     config_source::FileError, dot_env::DotEnvironmentConfigSource, ConfigSource,
@@ -11,12 +13,29 @@ pub fn sum_as_string(a: usize, b: usize) -> String {
     (a + b).to_string()
 }
 
+//TODO Data Type Converter
+// types to support
+// primitives
+//  - integer
+//  - float
+//  - string
+//  - boolean
+// durations
+// timestamps
+// dates
+
+// TODO should be able to build custom converter
+//  We may want to use generics to have a common interface for building converters
+//  and then call those from type specific functions on the config impl
+
+// TODO how should the user specify nullability?
+
 pub struct Config {
     sources: Vec<Box<dyn ConfigSource>>,
 }
 
 impl Config {
-    pub fn get_value(&self, property_name: &str) -> Option<String> {
+    pub fn get_value_string(&self, property_name: &str) -> Option<String> {
         for config_source in self.sources.iter() {
             let value = config_source.get_value(property_name);
             if value.is_some() {
@@ -26,12 +45,23 @@ impl Config {
         None
     }
 
+    pub fn get_value<T>(&self, property_name: &str) -> Result<Option<T>, <T as FromStr>::Err>
+    where
+        T: FromStr,
+    {
+        self.get_value_string(property_name)
+            .map(|v| v.parse::<T>())
+            .transpose()
+    }
+
     pub fn get_value_or_default(&self, property_name: &str, default: String) -> String {
-        match self.get_value(property_name) {
+        match self.get_value_string(property_name) {
             Some(value) => value,
             None => default,
         }
     }
+
+    // TODO type agnostic get_value_or_default
 }
 
 #[derive(Debug)]
@@ -184,7 +214,7 @@ mod tests {
 
         let config = build_result.unwrap();
 
-        let value = config.get_value("test.one");
+        let value = config.get_value_string("test.one");
         assert_ne!(value, None);
         assert_eq!(value.unwrap(), "blah");
         env::remove_var("TEST_ONE");
@@ -206,8 +236,8 @@ mod tests {
 
         let config = build_result.unwrap();
 
-        assert_eq!(config.get_value("one_val"), Some("100".to_string()));
-        assert_eq!(config.get_value("two_val"), Some("300".to_string()));
+        assert_eq!(config.get_value_string("one_val"), Some("100".to_string()));
+        assert_eq!(config.get_value_string("two_val"), Some("300".to_string()));
     }
 
     #[rstest]
@@ -221,7 +251,7 @@ mod tests {
         assert!(build_result.is_ok());
 
         let config = build_result.unwrap();
-        assert_eq!(config.get_value("KEY1"), Some("blah".to_string()));
+        assert_eq!(config.get_value_string("KEY1"), Some("blah".to_string()));
     }
 
     #[test]
@@ -238,7 +268,7 @@ mod tests {
         let config = build_result.unwrap();
 
         assert_eq!(
-            config.get_value("KEY1"),
+            config.get_value_string("KEY1"),
             Some("Overrided Value".to_string())
         );
 
@@ -258,10 +288,36 @@ mod tests {
 
         let config = build_result.unwrap();
         assert_eq!(
-            config.get_value("database.user"),
+            config.get_value_string("database.user"),
             Some("Overrided value".to_string())
         );
 
         env::remove_var("DATABASE_USER");
     }
+
+    #[test]
+    fn get_typed_values() {
+        let dot_env_str = "
+        TEST_INTEGER=35
+        TEST_BOOL=false
+        ";
+        let build_result = ConfigBuilder::new()
+            .add_custom_source(Box::new(
+                DotEnvironmentConfigSource::from_str(&dot_env_str).unwrap(),
+            ))
+            .build();
+        assert!(build_result.is_ok());
+
+        let config = build_result.unwrap();
+
+        let integer_value = config.get_value::<i32>("test_integer");
+        assert!(integer_value.is_ok());
+        assert_eq!(integer_value.unwrap(), Some(35));
+
+        let bool_value = config.get_value::<bool>("test_bool");
+        assert!(bool_value.is_ok());
+        assert_eq!(bool_value.unwrap(), Some(false));
+    }
+
+    // TODO is it possible to use this method for custom types? integration test
 }
