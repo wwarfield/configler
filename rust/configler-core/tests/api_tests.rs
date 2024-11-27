@@ -35,7 +35,10 @@ fn verify_builder_custom_source_visibility() {
     assert!(builder_result.is_ok());
 
     let config = builder_result.unwrap();
-    assert_eq!(config.get_value("database.user"), Some("baz".to_string()));
+    assert_eq!(
+        config.get_value_string("database.user"),
+        Some("baz".to_string())
+    );
     assert_eq!(
         config.get_value_or_default("database.is_ssl", "true".to_string()),
         "true"
@@ -77,7 +80,7 @@ fn verify_custom_source_works_with_builder() {
 
     let config = builder_result.unwrap();
     assert_eq!(
-        config.get_value("any.value"),
+        config.get_value_string("any.value"),
         Some("example_value".to_string())
     );
 }
@@ -103,14 +106,14 @@ fn verify_config_property_group_pattern() {
     }
     impl<'a> DbConfig<'a> {
         fn get_username(&self) -> Result<String, ConfigValueError> {
-            match self.config.get_value("database.user") {
+            match self.config.get_value_string("database.user") {
                 Some(value) => Ok(value),
                 None => Err(ConfigValueError::NullError),
             }
         }
 
         fn get_password(&self) -> Result<String, ConfigValueError> {
-            match self.config.get_value("database.password") {
+            match self.config.get_value_string("database.password") {
                 Some(value) => Ok(value),
                 None => Err(ConfigValueError::NullError),
             }
